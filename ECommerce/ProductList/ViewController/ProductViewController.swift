@@ -26,7 +26,7 @@ class ProductViewController: UIViewController
     }
     
     //MARK: WebService Call
-    func getMovies()
+    func getProducts()
     {
         productListViewModel.getProductListData { (result) in
             switch result
@@ -45,7 +45,7 @@ class ProductViewController: UIViewController
     
     @IBAction func btnCallAPI(_ sender: Any)
     {
-        getMovies();
+        getProducts();
     }
     
     /*
