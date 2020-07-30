@@ -15,6 +15,9 @@ class ProductViewController: UIViewController
     
     @IBOutlet weak var lblRankingOrder: UILabel!
     @IBOutlet weak var tblProducts: UITableView!
+    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
+
+    
     lazy var productListViewModel:ProductsListViewModel = {
         return ProductsListViewModel()
     }()
@@ -24,10 +27,12 @@ class ProductViewController: UIViewController
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+    
+        self.tblProducts.isHidden = true
+        self.activityIndicator.isHidden = false
+        self.activityIndicator.startAnimating()
         
        getProducts()
-        
-        self.tblProducts.isHidden = true
     }
     
     //MARK: WebService Call
@@ -39,6 +44,8 @@ class ProductViewController: UIViewController
             case .success(_):
                 print("API Complete")
                 DispatchQueue.main.async {
+                    self.activityIndicator.stopAnimating()
+                    self.activityIndicator.isHidden = true
                     self.tblProducts.isHidden = false
                     self.tblProducts.delegate = self;
                     self.tblProducts.dataSource = self;
@@ -107,7 +114,6 @@ extension ProductViewController:UITableViewDelegate,UITableViewDataSource
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 44
     }
-    
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         return productListViewModel.getTitleForRowAtSection(at: section)
     }

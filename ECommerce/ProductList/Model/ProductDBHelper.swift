@@ -88,12 +88,20 @@ class ProductDBHelper:SQLiteDatabase
         {
             if createTableCategories == nil
             {
+                var delete:OpaquePointer?
+                
+                initializeStatement(sqlStatement: &delete, query: "DROP TABLE IF EXISTS Categories")
+                executeUpdate(sqlStatement: delete!)
+                
                 initializeStatement(sqlStatement: &createTableCategories, query: "CREATE TABLE IF NOT EXISTS Categories(category_id INTEGER PRIMARY KEY, name TEXT,sub_category_ids TEXT)")
                 executeUpdate(sqlStatement: createTableCategories!)
             }
             
             if createTableProducts == nil
             {
+                var delete:OpaquePointer? = nil
+                initializeStatement(sqlStatement: &delete, query: "DROP TABLE IF  EXISTS Products")
+                executeUpdate(sqlStatement: delete!)
                 initializeStatement(sqlStatement: &createTableProducts, query: "CREATE TABLE IF NOT EXISTS Products(product_id INTEGER PRIMARY KEY , name TEXT , dateAdded TEXT , category_id INTEGER , variants_ids TEXT, tax_id INTEGER)")
                 executeUpdate(sqlStatement: createTableProducts!)
             }
@@ -101,6 +109,10 @@ class ProductDBHelper:SQLiteDatabase
             
             if createTableRanking == nil
             {
+                var delete:OpaquePointer? = nil
+                initializeStatement(sqlStatement: &delete, query: "DROP TABLE IF  EXISTS Ranking")
+                executeUpdate(sqlStatement: delete!)
+                
                 initializeStatement(sqlStatement: &createTableRanking, query: "CREATE TABLE IF NOT EXISTS Ranking(ranking_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)")
                 executeUpdate(sqlStatement: createTableRanking!)
             }
@@ -108,6 +120,10 @@ class ProductDBHelper:SQLiteDatabase
             
             if createTableRankingProduct == nil
             {
+                var delete:OpaquePointer? = nil
+                initializeStatement(sqlStatement: &delete, query: "DROP TABLE IF  EXISTS RankingProduct")
+                executeUpdate(sqlStatement: delete!)
+                
                 initializeStatement(sqlStatement: &createTableRankingProduct, query: "CREATE TABLE IF NOT EXISTS RankingProduct(product_id INTEGER, view_count TEXT, order_count TEXT, shares_count TEXT)")
                 executeUpdate(sqlStatement: createTableRankingProduct!)
             }
@@ -115,6 +131,10 @@ class ProductDBHelper:SQLiteDatabase
             
             if createTableTax == nil
             {
+                var delete:OpaquePointer? = nil
+                initializeStatement(sqlStatement: &delete, query: "DROP TABLE IF  EXISTS Tax")
+                executeUpdate(sqlStatement: delete!)
+                
                 initializeStatement(sqlStatement: &createTableTax, query: "CREATE TABLE IF NOT EXISTS Tax(tax_id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT, value REAL)")
                 executeUpdate(sqlStatement: createTableTax!)
             }
@@ -122,6 +142,10 @@ class ProductDBHelper:SQLiteDatabase
             
             if createTableVariants == nil
             {
+                var delete:OpaquePointer? = nil
+                initializeStatement(sqlStatement: &delete, query: "DROP TABLE IF  EXISTS Variants")
+                executeUpdate(sqlStatement: delete!)
+                
                 initializeStatement(sqlStatement: &createTableVariants, query: "CREATE TABLE IF NOT EXISTS Variants(variant_id INTEGER, color TEXT, size TEXT , price TEXT)")
                 executeUpdate(sqlStatement: createTableVariants!)
             }
