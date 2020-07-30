@@ -13,10 +13,19 @@ class ProductsListViewModel
     //MARK: Variables
     
     var productListClient : ProductsListProtocol
+    var arrProducts:[ProductModel] = [ProductModel]()
     
     lazy var dbHelper:ProductDBHelper = {
         return ProductDBHelper.sharedInstance()
     }()
+    
+    var numberOfCell:Int
+    {
+        return arrProducts.count
+    }
+    
+    private var cellViewModels: [ProductListCellModel] = [ProductListCellModel]()
+
     
     //MARK: Initialize Product Client
     init( _productListClient: ProductsListProtocol = ProductListClient(_httpClient: HTTPClient()))
@@ -80,6 +89,9 @@ class ProductsListViewModel
                 }
             }
         }
+        
+        getAllProducts()
+        getParentCategories()
     }
     
     private func processFetchedRankings(rankings:[Ranking])
@@ -125,6 +137,58 @@ class ProductsListViewModel
                                order_count:"\(String(describing: order_count))",
                                shares_count:"\(String(describing: share_count))")
         }
+    }
+    
+    func getParentCategories()
+    {
+        let arrCategories = dbHelper.getParentCategories()
+        
+    }
+    
+    func getAllProducts()
+    {
+        arrProducts = dbHelper.getAllProducts()
+        for i in 0..<arrProducts.count
+        {
+            arrProducts[i].variants = dbHelper.getProductVariants(variant_id: arrProducts[i].variants_id)
+        }
+    }
+    
+    func getCellViewModel( at indexPath: IndexPath ) -> ProductListCellModel
+    {
+        let product = arrProducts[indexPath.section]
+        var arrCellModels = [ProductListCellModel]() //Temp Array
+
+        for variants in product.variants
+        {
+            arrCellModels.append(createCellViewModel(variantModel: variants))
+        }
+        self.cellViewModels = arrCellModels
+
+        return cellViewModels[indexPath.row]
+    }
+    
+    func getNumberofRowsInSection(at section:Int) -> Int
+    {
+        let productModel = arrProducts[section]
+        return productModel.variants.count
+    }
+    
+    func getTitleForRowAtSection(at section:Int) -> String
+    {
+        let productModel = arrProducts[section]
+        return productModel.product_name
+    }
+    
+    private func createCellViewModel( variantModel: VariantModel ) -> ProductListCellModel
+    {
+        
+        return ProductListCellModel(color: variantModel.color, size: variantModel.size, price: variantModel.price)
+    }
+        
+    func getProductVariants(at indexPath:IndexPath)->[VariantModel]
+    {
+        return arrProducts[indexPath.row].variants
     }
 }
 
