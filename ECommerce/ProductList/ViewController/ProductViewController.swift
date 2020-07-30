@@ -13,6 +13,7 @@ class ProductViewController: UIViewController
     
     //MARK: Variables
     
+    @IBOutlet weak var tblProducts: UITableView!
     lazy var productListViewModel:ProductsListViewModel = {
         return ProductsListViewModel()
     }()
@@ -21,8 +22,11 @@ class ProductViewController: UIViewController
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         // Do any additional setup after loading the view.
+        
+       getProducts()
+        
+        self.tblProducts.isHidden = true
     }
     
     //MARK: WebService Call
@@ -33,6 +37,12 @@ class ProductViewController: UIViewController
             {
             case .success(_):
                 print("API Complete")
+                DispatchQueue.main.async {
+                    self.tblProducts.isHidden = false
+                    self.tblProducts.delegate = self;
+                    self.tblProducts.dataSource = self;
+                    self.tblProducts.reloadData()
+                }
             case .failure(let error):
                 
                 print(error.rawValue)
@@ -40,22 +50,40 @@ class ProductViewController: UIViewController
             }
         }
     }
+}
+
+extension ProductViewController:UITableViewDelegate,UITableViewDataSource
+{
     
-    //MARK: Button Action
-    
-    @IBAction func btnCallAPI(_ sender: Any)
-    {
-        getProducts();
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return productListViewModel.numberOfCell
     }
     
-    /*
-     // MARK: - Navigation
-     
-     // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-     // Get the new view controller using segue.destination.
-     // Pass the selected object to the new view controller.
-     }
-     */
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 44
+    }
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return productListViewModel.getTitleForRowAtSection(at: section)
+    }
+    
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return productListViewModel.getNumberofRowsInSection(at: section)
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
+    {
+        let cell = tblProducts.dequeueReusableCell(withIdentifier: "ProductCell", for: indexPath) as! ProductCell
+        
+        let cellModel = productListViewModel.getCellViewModel(at: indexPath)
+        cell.productListCellModel = cellModel
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
+    {
+       
+    }
+    
     
 }
