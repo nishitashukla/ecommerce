@@ -41,6 +41,7 @@ class ProductDBHelper:SQLiteDatabase
      */
     var createTableRanking:OpaquePointer? = nil
     var insertIntoRanking:OpaquePointer? = nil
+    var selectRanking:OpaquePointer? = nil
     
     //Ranking Product Table Statements
     /*
@@ -49,6 +50,7 @@ class ProductDBHelper:SQLiteDatabase
      */
     var createTableRankingProduct:OpaquePointer? = nil
     var insertIntoRankingProduct:OpaquePointer? = nil
+    var selectRankingProduct:OpaquePointer?=nil
     
     //Tax Table Statements
     /*
@@ -274,11 +276,6 @@ class ProductDBHelper:SQLiteDatabase
         return arrCategories
     }
     
-    //Select p.product_id,p.name as product_name,p.dateAdded,p.category_id,c.name,p.variants_ids,t.name as tax_name,t.value from Products p
-    //INNER JOIN Tax t ON t.tax_id == p.tax_id
-    //INNER JOIN Categories c ON c.category_id = p.category_id
-    
-    
     func getAllProducts()->[ProductModel]
     {
         if(selectAllProducts == nil)
@@ -301,7 +298,7 @@ class ProductDBHelper:SQLiteDatabase
             
             let variants = [VariantModel]()
             
-            let productModel = ProductModel(product_id: product_id, product_name: product_name, dateAdded: dateAdded, category_id: category_id, category_name: category_name, variants_id: variants_ids, tax_value: tax_value, tax_name: tax_name,variants:variants)
+            let productModel = ProductModel(product_id: product_id, product_name: product_name, dateAdded: dateAdded, category_id: category_id, category_name: category_name, variants_id: variants_ids, tax_value: tax_value, tax_name: tax_name,view_count: "0",shares_count:"0", order_count:"0" ,variants:variants)
             
             arrProducts.append(productModel)
             
@@ -313,7 +310,6 @@ class ProductDBHelper:SQLiteDatabase
     
     func getProductVariants(variant_id : String)->[VariantModel]
     {
-        print(variant_id)
         if(selectVariants == nil)
         {
             initializeStatement(sqlStatement: &selectVariants, query: "SELECT DISTINCT variant_id,color,size,price FROM Variants WHERE variant_id IN (\(variant_id))")
@@ -337,6 +333,76 @@ class ProductDBHelper:SQLiteDatabase
         sqlite3_reset(selectVariants)
         selectVariants = nil
         return arrVariants
+    }
+    
+    func getRankingOptions()->[RankingModel]
+    {
+        if(selectRanking == nil)
+        {
+            initializeStatement(sqlStatement: &selectRanking, query: "SELECT DISTINCT ranking_id,name FROM Ranking")
+        }
+        
+        var arrRanking:[RankingModel] = []
+        
+        while executeSelect(sqlStatement: selectRanking!)
+        {
+            let ranking_id = Int(sqlite3_column_int(selectRanking, 0))
+
+            let name =  String(cString: sqlite3_column_text(selectRanking, 1))
+            
+            let rankingModel = RankingModel(ranking_id: ranking_id, name: name)
+            
+            arrRanking.append(rankingModel)
+            
+        }
+        sqlite3_reset(selectRanking)
+        return arrRanking
+    }
+    
+    func getSortedProduct(ranking_id:Int)->[ProductModel]
+    {
+        if(selectRankingProduct == nil)
+        {
+            if(ranking_id == 1)
+            {
+                initializeStatement(sqlStatement: &selectRankingProduct, query:"Select p.product_id,p.name as product_name,p.dateAdded,p.category_id,c.name as category_name,p.variants_ids,t.name as tax_name, t.value, r.view_count, r.order_count, r.shares_count from Products p INNER JOIN Tax t ON t.tax_id == p.tax_id INNER JOIN Categories c ON c.category_id = p.category_id INNER JOIN RankingProduct r ON p.product_id = r.product_id WHERE r.view_count != 0  ORDER BY r.view_count DESC")
+            }
+            else if(ranking_id == 2)
+            {
+                initializeStatement(sqlStatement: &selectRankingProduct, query:"Select p.product_id,p.name as product_name,p.dateAdded,p.category_id,c.name as category_name,p.variants_ids,t.name as tax_name, t.value, r.view_count, r.order_count, r.shares_count from Products p INNER JOIN Tax t ON t.tax_id == p.tax_id INNER JOIN Categories c ON c.category_id = p.category_id INNER JOIN RankingProduct r ON p.product_id = r.product_id WHERE r.order_count != 0  ORDER BY r.order_count DESC")
+            }
+            else if(ranking_id == 3)
+            {
+                initializeStatement(sqlStatement: &selectRankingProduct, query:"Select p.product_id,p.name as product_name,p.dateAdded,p.category_id,c.name as category_name,p.variants_ids,t.name as tax_name, t.value, r.view_count, r.order_count, r.shares_count from Products p INNER JOIN Tax t ON t.tax_id == p.tax_id INNER JOIN Categories c ON c.category_id = p.category_id INNER JOIN RankingProduct r ON p.product_id = r.product_id WHERE r.shares_count != 0  ORDER BY r.shares_count DESC")
+            }
+        }
+        var arrProducts:[ProductModel] = []
+        
+        while executeSelect(sqlStatement: selectRankingProduct!)
+        {
+            
+            let product_id = Int(sqlite3_column_int(selectRankingProduct, 0))
+            let product_name =  String(cString: sqlite3_column_text(selectRankingProduct, 1))
+            let dateAdded = String(cString: sqlite3_column_text(selectRankingProduct, 2))
+            let category_id = Int(sqlite3_column_int(selectRankingProduct, 3))
+            let category_name = String(cString: sqlite3_column_text(selectRankingProduct, 4))
+            let variants_ids = String(cString: sqlite3_column_text(selectRankingProduct, 5))
+            let tax_name = String(cString: sqlite3_column_text(selectRankingProduct, 6))
+            let tax_value = sqlite3_column_double(selectRankingProduct, 7)
+            let view_count = String(cString: sqlite3_column_text(selectRankingProduct, 8))
+            let order_count = String(cString: sqlite3_column_text(selectRankingProduct, 9))
+            let shares_count = String(cString: sqlite3_column_text(selectRankingProduct, 10))
+
+            let variants = [VariantModel]()
+            
+            let productModel = ProductModel(product_id: product_id, product_name: product_name, dateAdded: dateAdded, category_id: category_id, category_name: category_name, variants_id: variants_ids, tax_value: tax_value, tax_name: tax_name,view_count:view_count,shares_count:shares_count, order_count: order_count,variants:variants)
+            
+            arrProducts.append(productModel)
+            
+        }
+        sqlite3_reset(selectRankingProduct)
+        selectRankingProduct = nil
+        return arrProducts
     }
     
 }

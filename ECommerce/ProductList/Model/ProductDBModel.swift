@@ -8,13 +8,14 @@
 
 import Foundation
 
-struct CategoryModel {
-    
+struct CategoryModel
+{
     let category_id : Int
     let category_name :String
     let sub_categories_ids :String
     let sub_categories:[CategoryModel]
 }
+
 
 struct ProductModel
 {
@@ -26,12 +27,24 @@ struct ProductModel
     let variants_id:String
     let tax_value:Double
     let tax_name:String
+    let view_count:String
+    let shares_count:String
+    let order_count:String
     var variants:[VariantModel]
 }
 
-struct VariantModel {
+
+struct VariantModel
+{
     let variant_id:Int
     let color:String
     let size:String
     let price:String
+}
+
+
+struct RankingModel
+{
+    let ranking_id:Int
+    let name:String
 }

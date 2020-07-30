@@ -14,7 +14,8 @@ class ProductsListViewModel
     
     var productListClient : ProductsListProtocol
     var arrProducts:[ProductModel] = [ProductModel]()
-    
+    var arrRanking:[RankingModel] = [RankingModel]()
+
     lazy var dbHelper:ProductDBHelper = {
         return ProductDBHelper.sharedInstance()
     }()
@@ -25,7 +26,6 @@ class ProductsListViewModel
     }
     
     private var cellViewModels: [ProductListCellModel] = [ProductListCellModel]()
-
     
     //MARK: Initialize Product Client
     init( _productListClient: ProductsListProtocol = ProductListClient(_httpClient: HTTPClient()))
@@ -50,6 +50,7 @@ class ProductsListViewModel
         }
     }
     
+    //MARK: Save Data in Database
     private func processFetchedCategories( products: [Category] )
     {
         var uniqueTax = [Tax]()
@@ -92,6 +93,7 @@ class ProductsListViewModel
         
         getAllProducts()
         getParentCategories()
+        getSortOption()
     }
     
     private func processFetchedRankings(rankings:[Ranking])
@@ -139,12 +141,15 @@ class ProductsListViewModel
         }
     }
     
+    
+    //MARK: Get Categories from database
     func getParentCategories()
     {
         let arrCategories = dbHelper.getParentCategories()
         
     }
     
+    //MARK: Get Products from database
     func getAllProducts()
     {
         arrProducts = dbHelper.getAllProducts()
@@ -154,6 +159,30 @@ class ProductsListViewModel
         }
     }
     
+    func getSortOption()->[RankingModel]
+    {
+        return dbHelper.getRankingOptions()
+    }
+    
+    func getSortedData(ranking_id:Int)
+    {
+        if(ranking_id == -1)
+        {
+            getAllProducts()
+        }
+        else
+        {
+            arrProducts = []
+            arrProducts =  dbHelper.getSortedProduct(ranking_id: ranking_id)
+            print(arrProducts.count)
+            for i in 0..<arrProducts.count
+            {
+                arrProducts[i].variants = dbHelper.getProductVariants(variant_id: arrProducts[i].variants_id)
+            }
+        }
+    }
+    
+    //MARK: Prepare Cell Data
     func getCellViewModel( at indexPath: IndexPath ) -> ProductListCellModel
     {
         let product = arrProducts[indexPath.section]
@@ -167,6 +196,7 @@ class ProductsListViewModel
 
         return cellViewModels[indexPath.row]
     }
+    
     
     func getNumberofRowsInSection(at section:Int) -> Int
     {

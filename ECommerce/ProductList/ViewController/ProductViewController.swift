@@ -13,6 +13,7 @@ class ProductViewController: UIViewController
     
     //MARK: Variables
     
+    @IBOutlet weak var lblRankingOrder: UILabel!
     @IBOutlet weak var tblProducts: UITableView!
     lazy var productListViewModel:ProductsListViewModel = {
         return ProductsListViewModel()
@@ -50,6 +51,50 @@ class ProductViewController: UIViewController
             }
         }
     }
+    
+    //MARK: Button Action
+
+    @IBAction func btnSortAction(_ sender: Any)
+    {
+        
+        let optionMenuController = UIAlertController(title: nil, message: "Sort By", preferredStyle: .actionSheet)
+
+        let allAction = UIAlertAction(title: "All", style: .default, handler: {
+            (alert: UIAlertAction!) -> Void in
+            self.getSortedData(ranking_id: -1, name: "All")
+        })
+        optionMenuController.addAction(allAction)
+
+        for ranking in productListViewModel.getSortOption()
+        {
+            let sortAction = UIAlertAction(title: ranking.name, style: .default, handler: {
+                (alert: UIAlertAction!) -> Void in
+                self.getSortedData(ranking_id: ranking.ranking_id, name: ranking.name)
+            })
+            optionMenuController.addAction(sortAction)
+
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: {
+            (alert: UIAlertAction!) -> Void in
+           // print("Cancel")
+        })
+        optionMenuController.addAction(cancelAction)
+
+        self.present(optionMenuController, animated: true, completion: nil)
+    }
+ 
+    
+    func getSortedData(ranking_id:Int,name:String)
+    {
+        self.lblRankingOrder.text = name
+        productListViewModel.getSortedData(ranking_id: ranking_id)
+        
+        DispatchQueue.main.async
+            {
+                print(self.productListViewModel.numberOfCell)
+                self.tblProducts.reloadData()
+        }
+    }
 }
 
 extension ProductViewController:UITableViewDelegate,UITableViewDataSource
@@ -62,6 +107,7 @@ extension ProductViewController:UITableViewDelegate,UITableViewDataSource
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 44
     }
+    
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         return productListViewModel.getTitleForRowAtSection(at: section)
     }
