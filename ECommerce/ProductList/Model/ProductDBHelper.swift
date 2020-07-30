@@ -21,6 +21,8 @@ class ProductDBHelper:SQLiteDatabase
      */
     var createTableCategories : OpaquePointer? = nil
     var insertIntoCategories : OpaquePointer? = nil
+    var selectParentCategories:OpaquePointer? = nil
+    var selectSubCategory:OpaquePointer? = nil
     
     //Products Table Statements
     /*
@@ -30,7 +32,8 @@ class ProductDBHelper:SQLiteDatabase
      */
     var createTableProducts:OpaquePointer? = nil
     var insertIntoProducts:OpaquePointer? = nil
-    
+    var selectAllProducts:OpaquePointer?=nil
+    var selectCategoryWiseProducts:OpaquePointer?=nil
     //Ranking Table Statements
     /*
      Table name : Ranking
@@ -63,7 +66,7 @@ class ProductDBHelper:SQLiteDatabase
      */
     var createTableVariants:OpaquePointer? = nil
     var insertIntoVariants:OpaquePointer? = nil
-    
+    var selectVariants:OpaquePointer?=nil
     
     static var instance : ProductDBHelper = {
         let instance1 = ProductDBHelper()
@@ -123,6 +126,7 @@ class ProductDBHelper:SQLiteDatabase
         }
     }
     
+    //MARK: Insert Statments
     func insertCategories(category_id:Int, name:String, sub_category_ids:String)
     {
         if insertIntoCategories == nil
@@ -197,17 +201,18 @@ class ProductDBHelper:SQLiteDatabase
         executeUpdate(sqlStatement: insertIntoVariants!)
     }
     
+    //MARK: Select Statements
     func getTaxIdFor(name:String,value:Double)-> Int
     {
-
+        
         if selectTaxId == nil
         {
             initializeStatement(sqlStatement: &selectTaxId, query: "SELECT tax_id FROM Tax WHERE name = ? and value = ?")
         }
-
+        
         sqlite3_bind_text(selectTaxId, 1, (name as NSString).utf8String, -1, nil)
         sqlite3_bind_double(selectTaxId, 2, CDouble(value))
-
+        
         var tax_id = 0
         while executeSelect(sqlStatement: selectTaxId!)
         {
@@ -215,7 +220,123 @@ class ProductDBHelper:SQLiteDatabase
         }
         sqlite3_reset(selectTaxId)
         return tax_id
-
+        
     }
+    
+    func getParentCategories()->[CategoryModel]
+    {
+        if(selectParentCategories == nil)
+        {
+            initializeStatement(sqlStatement: &selectParentCategories, query: "SELECT category_id,name,sub_category_ids FROM Categories WHERE sub_category_ids != ''")
+        }
+        var arrCategories:[CategoryModel] = []
+        
+        while executeSelect(sqlStatement: selectParentCategories!)
+        {
+            
+            let category_id = Int(sqlite3_column_int(selectParentCategories, 0))
+            let category_name =  String(cString: sqlite3_column_text(selectParentCategories, 1))
+            let sub_category_ids = String(cString: sqlite3_column_text(selectParentCategories, 2))
+            let sub_categories:[CategoryModel] = [CategoryModel]()
+            
+            let categoryModel = CategoryModel(category_id: category_id, category_name: category_name, sub_categories_ids: sub_category_ids,sub_categories:sub_categories)
+            
+            arrCategories.append(categoryModel)
+            
+        }
+        sqlite3_reset(selectParentCategories)
+        return arrCategories
+    }
+    
+    func getChildCategories(sub_category_id : String)->[CategoryModel]
+    {
+        if(selectSubCategory == nil)
+        {
+            initializeStatement(sqlStatement: &selectSubCategory, query: "SELECT category_id,name,sub_category_ids FROM Categories WHERE category_id IN (\(sub_category_id))")
+        }
+        var arrCategories:[CategoryModel] = []
+        
+        while executeSelect(sqlStatement: selectSubCategory!)
+        {
+            
+            let category_id = Int(sqlite3_column_int(selectSubCategory, 0))
+            let category_name =  String(cString: sqlite3_column_text(selectSubCategory, 1))
+            let sub_category_ids = String(cString: sqlite3_column_text(selectSubCategory, 2))
+            let sub_categories:[CategoryModel] = [CategoryModel]()
+            
+            let categoryModel = CategoryModel(category_id: category_id, category_name: category_name, sub_categories_ids: sub_category_ids,sub_categories:sub_categories)
+            
+            arrCategories.append(categoryModel)
+            
+        }
+        sqlite3_reset(selectSubCategory)
 
+        return arrCategories
+    }
+    
+    //Select p.product_id,p.name as product_name,p.dateAdded,p.category_id,c.name,p.variants_ids,t.name as tax_name,t.value from Products p
+    //INNER JOIN Tax t ON t.tax_id == p.tax_id
+    //INNER JOIN Categories c ON c.category_id = p.category_id
+    
+    
+    func getAllProducts()->[ProductModel]
+    {
+        if(selectAllProducts == nil)
+        {
+            initializeStatement(sqlStatement: &selectAllProducts, query: "Select p.product_id,p.name as product_name,p.dateAdded,p.category_id,c.name as category_name,p.variants_ids,t.name as tax_name,t.value from Products p INNER JOIN Tax t ON t.tax_id == p.tax_id INNER JOIN Categories c ON c.category_id = p.category_id")
+        }
+        var arrProducts:[ProductModel] = []
+        
+        while executeSelect(sqlStatement: selectAllProducts!)
+        {
+            
+            let product_id = Int(sqlite3_column_int(selectAllProducts, 0))
+            let product_name =  String(cString: sqlite3_column_text(selectAllProducts, 1))
+            let dateAdded = String(cString: sqlite3_column_text(selectAllProducts, 2))
+            let category_id = Int(sqlite3_column_int(selectAllProducts, 3))
+            let category_name = String(cString: sqlite3_column_text(selectAllProducts, 4))
+            let variants_ids = String(cString: sqlite3_column_text(selectAllProducts, 5))
+            let tax_name = String(cString: sqlite3_column_text(selectAllProducts, 6))
+            let tax_value = sqlite3_column_double(selectAllProducts, 7)
+            
+            let variants = [VariantModel]()
+            
+            let productModel = ProductModel(product_id: product_id, product_name: product_name, dateAdded: dateAdded, category_id: category_id, category_name: category_name, variants_id: variants_ids, tax_value: tax_value, tax_name: tax_name,variants:variants)
+            
+            arrProducts.append(productModel)
+            
+        }
+        sqlite3_reset(selectAllProducts)
+
+        return arrProducts
+    }
+    
+    func getProductVariants(variant_id : String)->[VariantModel]
+    {
+        print(variant_id)
+        if(selectVariants == nil)
+        {
+            initializeStatement(sqlStatement: &selectVariants, query: "SELECT DISTINCT variant_id,color,size,price FROM Variants WHERE variant_id IN (\(variant_id))")
+        }
+        
+        var arrVariants:[VariantModel] = []
+        
+        while executeSelect(sqlStatement: selectVariants!)
+        {
+            
+            let variant_id = Int(sqlite3_column_int(selectVariants, 0))
+            let color =  String(cString: sqlite3_column_text(selectVariants, 1))
+            let size = String(cString: sqlite3_column_text(selectVariants, 2))
+            let price = String(cString: sqlite3_column_text(selectVariants, 3))
+            
+            let variantModel = VariantModel(variant_id: variant_id, color: color, size: size, price: price)
+            
+            arrVariants.append(variantModel)
+            
+        }
+        sqlite3_reset(selectVariants)
+        selectVariants = nil
+        return arrVariants
+    }
+    
 }
