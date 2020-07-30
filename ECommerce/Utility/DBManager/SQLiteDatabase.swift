@@ -44,7 +44,7 @@ class SQLiteDatabase:NSObject
         
         //writableDBPath  =   NSBundle.mainBundle().resourcePath! + "/" + fileName
         
-        print("writableDBPath:  \(writableDBPath!)")
+       // print("writableDBPath:  \(writableDBPath!)")
     }
     
     func initializeStatement(sqlStatement statement:inout OpaquePointer?,query sqlQuery:String)
